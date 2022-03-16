@@ -1,0 +1,18 @@
+[package]
+name = "ts-fuck-around"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+# centralized keygen
+tofn = { git = "https://github.com/axelarnetwork/tofn.git" }
+ecdsa = { version = "0.12", features = ["digest"], default-features = false } # needed only for FromDigest trait
+tracing = {version = "0.1", default-features = false}
+tracing-subscriber = { version = "0", features = ["env-filter", "fmt"], default-features = false }
+k256 = { version = "0.9", features = ["ecdsa", "zeroize"], default-features = false }
