@@ -12,6 +12,14 @@ use tofn::{
 };
 use tracing::debug;
 
+pub const PARTIES: usize = 6;
+pub const THRESHOLD: usize = 6;
+// mod keygen;
+pub type SecretKeyTemp = [u8];
+
+mod central_keygen;
+use crate::central_keygen::centralized_keygen;
+
 fn set_up_logs() {
     // set up environment variable for log level
     // set up an event subscriber for logs
@@ -26,19 +34,32 @@ fn set_up_logs() {
         .try_init();
 }
 
-// goal: get trivial example running n rippin
+// goal: get trivial example running
 // https://github.com/axelarnetwork/tofn/blob/main/tests/integration/single_thread/mod.rs
 #[test]
 pub fn run_tests() {
-    do_the_thing();
+    let dummy_secret_key = 0usize.to_be_bytes();
+    do_the_thing(&dummy_secret_key);
 }
 
-pub fn do_the_thing() {
-    // keygen
+pub fn do_the_thing(secret_key: &SecretKeyTemp) {
+    // setup
     set_up_logs();
-    // keygen
-    let party_share_counts = PartyShareCounts::from_vec(vec![1, 2, 3, 4]).unwrap(); // 10 total shares
-    let threshold = 5;
+    let party_share_counts = PartyShareCounts::from_vec(vec![1; PARTIES]).unwrap(); // 10 total shares
+
+    // keygen: See https://hackmd.io/geBuwUdGT0iI07m1txNLjw
+    debug!("keygen...");
+    let keygen_shares = centralized_keygen(&party_share_counts, THRESHOLD, secret_key);
+    let keygen_shares = initialize_honest_parties(&party_share_counts, THRESHOLD);
+    // let keygen_share_outputs = execute_protocol(keygen_shares).expect("internal tofn error");
+    // let secret_key_shares: VecMap<KeygenShareId, SecretKeyShare> =
+    //     keygen_share_outputs.map2(|(keygen_share_id, keygen_share)| match keygen_share {
+    //         Protocol::NotDone(_) => panic!("share_id {} not done yet", keygen_share_id),
+    //         Protocol::Done(result) => result.expect("share finished with error"),
+    //     });
+
+    // signing
+    debug!("sign...");
     let sign_parties = {
         let mut sign_parties = SignParties::with_max_size(party_share_counts.party_count());
         sign_parties.add(TypedUsize::from_usize(0)).unwrap();
@@ -49,20 +70,8 @@ pub fn do_the_thing() {
     debug!(
         "total_share_count {}, threshold {}",
         party_share_counts.total_share_count(),
-        threshold,
+        THRESHOLD,
     );
-
-    debug!("keygen...");
-    let keygen_shares = initialize_honest_parties(&party_share_counts, threshold);
-    let keygen_share_outputs = execute_protocol(keygen_shares).expect("internal tofn error");
-    let secret_key_shares: VecMap<KeygenShareId, SecretKeyShare> =
-        keygen_share_outputs.map2(|(keygen_share_id, keygen_share)| match keygen_share {
-            Protocol::NotDone(_) => panic!("share_id {} not done yet", keygen_share_id),
-            Protocol::Done(result) => result.expect("share finished with error"),
-        });
-
-    debug!("sign...");
-
     let keygen_share_ids = VecMap::<SignShareId, _>::from_vec(
         party_share_counts.share_id_subset(&sign_parties).unwrap(),
     );
@@ -109,6 +118,7 @@ pub mod tofn_common {
 
     pub mod keygen {
 
+        use crate::THRESHOLD;
         use tofn::{
             collections::VecMap,
             gg20::keygen::{
@@ -143,7 +153,7 @@ pub mod tofn_common {
                     (0..party_share_count).map(move |subshare_id| {
                         new_keygen(
                             party_share_counts.clone(),
-                            threshold,
+                            THRESHOLD,
                             party_id,
                             subshare_id,
                             &party_keygen_data,

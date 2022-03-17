@@ -16,3 +16,12 @@ ecdsa = { version = "0.12", features = ["digest"], default-features = false } # 
 tracing = {version = "0.1", default-features = false}
 tracing-subscriber = { version = "0", features = ["env-filter", "fmt"], default-features = false }
 k256 = { version = "0.9", features = ["ecdsa", "zeroize"], default-features = false }
+
+anyhow = "1.0.53"
+futures = "0.3"
+round-based = { version = "0.1.4", features = ["dev"] }
+structopt = "0.3"
+tokio = { version = "1.16", features = ["macros","fs","rt-multi-thread","io-util"] }
+surf = "2"
+
+rand = "0.8.5"
