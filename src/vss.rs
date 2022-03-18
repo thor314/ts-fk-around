@@ -19,16 +19,13 @@ impl Vss {
             .collect();
         Self { secret_coeffs }
     }
-	pub fn new_byok(threshold: usize, secret_key: SecretKey) -> Self{
-        let secret_coeffs: Vec<k256::Scalar> = vec!(secret_key)
-			.into_iter()
-			.chain(
-				(1..=threshold)
-    	        .map(|_| k256::Scalar::random(rand::thread_rng())))
-    	        .collect();
+    pub fn new_byok(threshold: usize, secret_key: SecretKey) -> Self {
+        let secret_coeffs: Vec<k256::Scalar> = vec![secret_key]
+            .into_iter()
+            .chain((1..=threshold).map(|_| k256::Scalar::random(rand::thread_rng())))
+            .collect();
         Self { secret_coeffs }
-
-	}
+    }
 
     pub fn get_threshold(&self) -> usize {
         self.secret_coeffs.len() - 1

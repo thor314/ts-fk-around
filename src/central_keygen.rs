@@ -2,7 +2,6 @@ use crate::THRESHOLD;
 // use std::convert::TryFrom;
 use crate::execute::execute_protocol;
 use crate::tofn_common::keygen::initialize_honest_parties;
-use crate::SecretKeyTemp;
 use ecdsa::{elliptic_curve::sec1::FromEncodedPoint, hazmat::VerifyPrimitive};
 use tofn::gg20::keygen::KeygenPartyId;
 use tofn::gg20::keygen::KeygenProtocol;
@@ -18,10 +17,8 @@ use tofn::{
 use rand::Rng;
 use tracing::debug;
 
-pub(crate) fn call_vss_with_secret_key(n: usize, t: usize,secret_key: k256::Scalar) {
+pub(crate) fn call_vss_with_secret_key(n: usize, t: usize, secret_key: k256::Scalar) {
     // let Vss = tofn::
-
-
 }
 // pub(crate) fn initialize_centralized_parties(party_share_counts: &PartyShareCounts<KeygenPartyId>, threshold
 // pub(crate) fn centralized_keygen(

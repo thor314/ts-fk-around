@@ -3,6 +3,7 @@ use crate::execute::execute_protocol;
 use crate::tofn_common::keygen::initialize_honest_parties;
 use ecdsa::elliptic_curve::Field;
 use ecdsa::{elliptic_curve::sec1::FromEncodedPoint, hazmat::VerifyPrimitive};
+use tofn::gg20::keygen::{GroupPublicInfo, ShareSecretInfo};
 #[cfg(feature = "malicious")]
 use tofn::gg20::sign;
 use tofn::gg20::sign::{new_sign, MessageDigest, SignParties, SignShareId};
@@ -36,7 +37,7 @@ fn set_up_logs() {
         // .with_current_span(false)
         .try_init();
 }
->
+
 // goal: get trivial example running
 // https://github.com/axelarnetwork/tofn/blob/main/tests/integration/single_thread/mod.rs
 #[test]
@@ -50,12 +51,33 @@ pub fn do_the_thing(secret_key: SecretKey) {
     set_up_logs();
     let party_share_counts = PartyShareCounts::from_vec(vec![1; PARTIES]).unwrap(); // 10 total shares
 
-    
     let mut vss = crate::vss::Vss::new_byok(THRESHOLD, secret_key);
     let keygen_shares = vss.shares(PARTIES);
+    let secret_share_info: VecMap<KeygenShareId, ShareSecretInfo> =
+        keygen_shares.into_iter().map(|share| todo!()).collect();
 
-    // satisfy type checks.
-    let secret_key_shares: VecMap<KeygenShareId,SecretKeyShare> = todo!();
+    // Do the dirty work of satisfying type checks
+    let group_public_info = GroupPublicInfo {
+        party_share_counts,
+        threshold: THRESHOLD,
+        y: todo!(),
+        all_shares: todo!(),
+    };
+    // ShareSecInfo
+    let share_secret_info = ShareSecretInfo {
+        index: todo!(),
+        dk: todo!(),
+        x_i: todo!(),
+    };
+    // Pallier decryption keys for each party
+    //
+    let secret_key_shares: VecMap<KeygenShareId, SecretKeyShare> = secret_share_info
+        .into_iter()
+        .map(|share| SecretKeyShare {
+            group: group_public_info.clone(),
+            share: share.1,
+        })
+        .collect();
 
     // write to file
     let write_to_file = todo!();
