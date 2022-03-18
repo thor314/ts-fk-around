@@ -1,6 +1,7 @@
 // use std::convert::TryFrom;
 use crate::execute::execute_protocol;
 use crate::tofn_common::keygen::initialize_honest_parties;
+use ecdsa::elliptic_curve::Field;
 use ecdsa::{elliptic_curve::sec1::FromEncodedPoint, hazmat::VerifyPrimitive};
 #[cfg(feature = "malicious")]
 use tofn::gg20::sign;
@@ -15,10 +16,12 @@ use tracing::debug;
 pub const PARTIES: usize = 6;
 pub const THRESHOLD: usize = 6;
 // mod keygen;
-pub type SecretKeyTemp = [u8];
+pub type SecretKey = k256::Scalar;
 
 mod central_keygen;
-use crate::central_keygen::centralized_keygen;
+mod k256_serde;
+mod vss;
+// use crate::central_keygen::centralized_keygen;
 
 fn set_up_logs() {
     // set up environment variable for log level
@@ -33,30 +36,40 @@ fn set_up_logs() {
         // .with_current_span(false)
         .try_init();
 }
-
+>
 // goal: get trivial example running
 // https://github.com/axelarnetwork/tofn/blob/main/tests/integration/single_thread/mod.rs
 #[test]
 pub fn run_tests() {
-    let dummy_secret_key = 0usize.to_be_bytes();
-    do_the_thing(&dummy_secret_key);
+    let dummy_secret_key = k256::Scalar::random(rand::thread_rng());
+    do_the_thing(dummy_secret_key);
 }
 
-pub fn do_the_thing(secret_key: &SecretKeyTemp) {
+pub fn do_the_thing(secret_key: SecretKey) {
     // setup
     set_up_logs();
     let party_share_counts = PartyShareCounts::from_vec(vec![1; PARTIES]).unwrap(); // 10 total shares
 
+    
+    let mut vss = crate::vss::Vss::new_byok(THRESHOLD, secret_key);
+    let keygen_shares = vss.shares(PARTIES);
+
+    // satisfy type checks.
+    let secret_key_shares: VecMap<KeygenShareId,SecretKeyShare> = todo!();
+
+    // write to file
+    let write_to_file = todo!();
+
     // keygen: See https://hackmd.io/geBuwUdGT0iI07m1txNLjw
     debug!("keygen...");
-    let keygen_shares = centralized_keygen(&party_share_counts, THRESHOLD, secret_key);
     let keygen_shares = initialize_honest_parties(&party_share_counts, THRESHOLD);
-    // let keygen_share_outputs = execute_protocol(keygen_shares).expect("internal tofn error");
-    // let secret_key_shares: VecMap<KeygenShareId, SecretKeyShare> =
-    //     keygen_share_outputs.map2(|(keygen_share_id, keygen_share)| match keygen_share {
-    //         Protocol::NotDone(_) => panic!("share_id {} not done yet", keygen_share_id),
-    //         Protocol::Done(result) => result.expect("share finished with error"),
-    //     });
+
+    let keygen_share_outputs = execute_protocol(keygen_shares).expect("internal tofn error");
+    let secret_key_shares: VecMap<KeygenShareId, SecretKeyShare> =
+        keygen_share_outputs.map2(|(keygen_share_id, keygen_share)| match keygen_share {
+            Protocol::NotDone(_) => panic!("share_id {} not done yet", keygen_share_id),
+            Protocol::Done(result) => result.expect("share finished with error"),
+        });
 
     // signing
     debug!("sign...");
